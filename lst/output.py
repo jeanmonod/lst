@@ -54,13 +54,11 @@ class SprintBurnUpOutput(TemplatedOutput):
         super(SprintBurnUpOutput, self).__init__(output_dir)
 
     def output(self, sprint_name, data, commited_values, sprint_data, title):
-        print 'Retrieving base graph'
         try:
             template = Template(self.get_template('sprint_burnup.html'))
         except Exception as e:
             print 'Couldnt find the base graph file', e
 
-        print 'Writing graph'
         try:
             path = 'sprint_burnup-%s-%s.html' % (
                 Helper.slugify(sprint_name),

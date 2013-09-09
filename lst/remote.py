@@ -105,18 +105,26 @@ class JiraRemote(Remote):
                 story.is_nice = s.find('title').text.find(nice_identifier) != -1
 
             story.status = int(s.find('status').get('id'))
+            no_sp = []
+            no_bv = []
             try:
                 story.business_value = float(s.find('./customfields/customfield/[@id="customfield_10064"]/customfieldvalues/customfieldvalue').text)
             except AttributeError:
-                print 'Story ' + story.id + ' has no business value defined, 0 taken as default'
+                no_bv.append(story.id)
             try:
                 story.story_points = float(s.find('./customfields/customfield/[@id="customfield_10040"]/customfieldvalues/customfieldvalue').text)
             except AttributeError:
-                print 'Story ' + story.id + ' has no story points defined, 0 taken as default'
+                no_sp.append(story.id)
             if post_processor is not None:
                 story = post_processor.post_process(story)
 
             jira_entries.append(story)
+
+        if len(no_sp) > 0:
+            print 'Stories ' + ', '.join(no_sp) + ' have no story points defined'
+
+        if len(no_bv) > 0:
+            print 'Stories ' + ', '.join(no_bv) + ' have no business values defined'
 
         return jira_entries
 
@@ -206,7 +214,6 @@ class ZebraRemote(Remote):
 
         try:
             entries = response_json['command']['reports']['report']
-            print 'Will now parse %d entries found in Zebra' % len(entries)
         except:
             print 'No entries found in Zebra'
             return zebra_entries

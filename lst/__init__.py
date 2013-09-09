@@ -68,7 +68,6 @@ available commands:
         AppContainer.dev_mode = args.dev_mode
 
         # read config
-        print 'Reading config'
         config = ConfigParser()
         config.load_config(SETTINGS_PATH)
         AppContainer.config = config

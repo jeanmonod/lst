@@ -77,8 +77,6 @@ class BaseCommand:
         if sprint is None:
             raise InputParametersError("Sprint %s not found. Make sure it's defined in your settings file" % (sprint_name))
 
-        print "Sprint %s found in config" % (sprint.name)
-
         return sprint
 
     def ensure_optional_argument_is_present(self, optional_arguments, message='Missing parameter'):
@@ -454,8 +452,8 @@ class SprintBurnUpCommand(BaseCommand):
         except:
             graph_end_date = datetime.date.today() - datetime.timedelta(days = 1)
 
-        # start fetching zebra data
-        print 'Start fetching Zebra'
+        sys.stdout.write('Zebra fetching ... ')
+        sys.stdout.flush()
 
         zebra = ZebraRemote(self.secret.get_zebra('url'), self.secret.get_zebra('username'), self.secret.get_zebra('password'))
 
@@ -480,10 +478,10 @@ class SprintBurnUpCommand(BaseCommand):
                 day.entries.append(zebra_entry)
                 zebra_days[readable_date] = day
 
-        print 'End Zebra'
+        sys.stdout.write('OK ('+ `len(zebra_entries)` + ' entries found)\n')
 
-        # start fetching jira data
-        print 'Start fetching Jira'
+        sys.stdout.write('Jira fetching ... ')
+        sys.stdout.flush()
 
         JiraEntry.closed_status_ids = sprint.get_closed_status_codes()
         jira = JiraRemote(self.secret.get_jira('url'), self.secret.get_jira('username'), self.secret.get_jira('password'))
@@ -505,14 +503,9 @@ class SprintBurnUpCommand(BaseCommand):
             post_processor
         )
 
-        print 'End Jira'
-
-        print 'Mixing retrieved values'
+        sys.stdout.write('OK ('+ `len(jira_entries)` + ' stories found)\n')
 
         graph_entries = GraphEntries()
-
-        print ''
-        print 'Zebra output per day:'
 
         # get all sprint days
         days = sprint.get_all_days(False)
@@ -522,20 +515,11 @@ class SprintBurnUpCommand(BaseCommand):
 
             try:
                 zebra_day = zebra_days[str(date)]
-                print date
-
-                # output nb of hours for each person for this day
-                entries_per_user = zebra_day.get_entries_per_user()
-                for user,time in entries_per_user.items():
-                    print "%s : %s" % (user, time)
                 time_without_forced = zebra_day.time
-                # check for forced zebra values
                 total_time = sprint.get_forced_data(str(date), zebra_day.time)
 
             except KeyError, e:
                 total_time = sprint.get_forced_data(str(date), 0)
-                if total_time != 0:
-                    print date
 
             planned_time = sprint.get_planned_data(str(date))
             planned_str = '' if planned_time is None else '(Planned: ' + str(planned_time) + ')'
@@ -543,9 +527,9 @@ class SprintBurnUpCommand(BaseCommand):
             # print total time per day (with and/or without forced values)
             if total_time != 0:
                 if time_without_forced == total_time:
-                    print 'Total: %s %s' % (total_time, planned_str)
+                    sys.stdout.write('%s: %s %s' % (date, total_time, planned_str))
                 else:
-                    print 'Total (without forced data): %s' % (time_without_forced)
+                    print date, 'Total (without forced data): %s' % (time_without_forced)
                     print 'Total including forced data: %s %s' % (total_time, planned_str)
                 print ''
 
@@ -584,7 +568,6 @@ class SprintBurnUpCommand(BaseCommand):
         sprint_data['graphEndDate'] = graph_end_date.strftime('%Y-%m-%d')
 
         # write the graph
-        print 'Starting output'
         output = SprintBurnUpOutput(AppContainer.secret.get_output_dir())
         output.output(sprint.name, data, commited_values, sprint_data, sprint.get_title())
 
