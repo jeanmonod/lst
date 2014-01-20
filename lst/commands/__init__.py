@@ -142,7 +142,8 @@ class SprintBurnUpCommand(BaseCommand):
         zebra_manager = self.get_zebra_manager()
         timesheets = zebra_manager.get_timesheets_for_sprint(sprint)
         sprint.timesheet_collection = timesheets
-        zebra_days = timesheets.group_by_day()
+        if len(timesheets) > 0:
+            zebra_days = timesheets.group_by_day()
         print 'End Zebra'
 
         # start fetching jira data
